@@ -40,7 +40,8 @@ def seleccionar_modelo(
 ):
     """
     Prueba diferentes configuraciones de Random Forest
-    y selecciona la de mayor Macro F1 en validation.
+    y selecciona la que obtiene el mayor Macro F1-score
+    sobre el validation set.
     """
 
     numeros_arboles = [50, 100, 200]
@@ -57,14 +58,31 @@ def seleccionar_modelo(
         for max_depth in profundidades:
 
             modelo = RandomForestClassifier(
+                # Número de árboles que forman el Random Forest
                 n_estimators=n_estimators,
+
+                # Criterio utilizado para evaluar las divisiones
                 criterion="gini",
+
+                # Limita la profundidad máxima de cada árbol
                 max_depth=max_depth,
+
+                # Mínimo de observaciones necesarias para dividir un nodo
                 min_samples_split=2,
+
+                # Mínimo de observaciones permitidas en cada nodo hoja
                 min_samples_leaf=1,
+
+                # Número de features considerados en cada división
                 max_features="sqrt",
+
+                # Cada árbol se entrena con una muestra bootstrap
                 bootstrap=True,
+
+                # Permite reproducir los mismos resultados
                 random_state=42,
+
+                # Utiliza todos los núcleos disponibles del procesador
                 n_jobs=-1
             )
 
@@ -155,7 +173,8 @@ def main():
     print("---------------------------")
     print(f"Número de observaciones: {len(features)}")
     print(f"Número de features: {features.shape[1]}")
-    print(f"Clases encontradas: {sorted(set(labels))}")
+    clases = [int(clase) for clase in sorted(set(labels))]
+    print(f"Clases encontradas: {clases}")
 
     # ----------------------------------------------------------
     # 2. Separar training del resto de los datos
@@ -278,6 +297,10 @@ def main():
 
     # Utilizar training + validation para entrenar
     # el modelo final con más información disponible.
+    # Después de seleccionar los hiperparámetros con validation,
+    # se combinan training y validation para entrenar el modelo final.
+    # El test set permanece separado y solo se utiliza para
+    # la evaluación final del desempeño.
     x_final_train = list(x_train) + list(x_validation)
     y_final_train = list(y_train) + list(y_validation)
 
@@ -344,6 +367,10 @@ def main():
         predicciones_test,
         average="macro"
     )
+
+    # Macro F1-score se utiliza como métrica principal porque
+    # el problema contiene 10 clases y se busca dar el mismo
+    # peso al desempeño obtenido en cada una de ellas.
 
     macro_f1 = f1_score(
         y_test,
